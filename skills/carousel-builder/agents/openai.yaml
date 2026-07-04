@@ -1,0 +1,4 @@
+interface:
+  display_name: "Carousel Builder"
+  short_description: "Create and improve social media carousel cards."
+  default_prompt: "Create or improve a carousel from a topic, article, draft text, or HTML file."

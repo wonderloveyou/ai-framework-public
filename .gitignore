@@ -1,0 +1,60 @@
+﻿# Secrets — NEVER COMMIT
+.env
+*.env
+*.env.local
+*.env.production
+
+# API keys & credentials
+*-key*
+*secret*
+*credential*
+
+# Node
+node_modules/
+.gradle/
+.next/
+.cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Docker
+docker-compose.override.yml
+
+# Logs
+*.log
+/logs/
+
+# Obsidian
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.obsidian/cache
+.obsidian/hotkeys.json
+
+# NotebookLM
+.notebooklm/
+
+# Backups
+*.bak
+*.backup
+
+# Session handoffs
+SESSION-HANDOFF.md
+
+# Temp
+temp/

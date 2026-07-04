@@ -1,0 +1,34 @@
+{
+  "version": "0.1.0",
+  "profiles": {
+    "velmi": "profiles/velmi.md",
+    "fonts": "profiles/fonts.md"
+  },
+  "references": {
+    "pipeline": "references/pipeline.md",
+    "platform_formats": "references/platform-formats.md",
+    "narrative_and_patterns": "references/narrative-and-patterns.md",
+    "html_export": "references/html-export.md",
+    "quality_gates": "references/quality-gates.md"
+  },
+  "examples": {
+    "bitrix_ai_agent": "examples/bitrix-ai-agent.md"
+  },
+  "engines": {
+    "html": {
+      "type": "html-css-artboard",
+      "templates": [
+        "W:\\0SMM\\service-files\\refi\\!CAROUSEL_TEMPLATE.html",
+        "W:\\0SMM\\service-files\\refi\\!TG_COVER_TEMPLATE.html"
+      ]
+    },
+    "image_prompt": {
+      "type": "visual-brief-to-image-model",
+      "status": "brief-only-until-user-selects-provider"
+    }
+  },
+  "limits": {
+    "max_reference_files": 5,
+    "skill_md_soft_limit_lines": 300
+  }
+}
