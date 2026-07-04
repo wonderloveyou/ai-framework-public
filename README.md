@@ -39,11 +39,11 @@ The current operational plan is in [ROADMAP.md](ROADMAP.md).
 
 ## Infrastructure
 
-| Server | Role | Notes |
-|---|---|---|
-| `{SERVER_A_IP}` | AI Tools | Hermes, OpenCode, Codex, n8n, Uptime Kuma, rsshub, PostgreSQL |
-| `{SERVER_B_IP}` | Projects | Bots, FastAPI apps, MySQL, project runtime |
-| `{SERVER_C_IP}` | VPN + Monitoring | WireGuard/Amnezia, monitoring role |
+| Role | Notes |
+|---|---|
+| AI Tools | Hermes, OpenCode, Codex, n8n, Uptime Kuma, rsshub, PostgreSQL |
+| Projects | Bots, FastAPI apps, MySQL, project runtime |
+| VPN + Monitoring | WireGuard/Amnezia, monitoring role |
 
 See [inventory/servers.md](inventory/servers.md) for the current sanitized inventory.
 
