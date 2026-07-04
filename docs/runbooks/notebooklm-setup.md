@@ -117,6 +117,80 @@ Security-focused fork, no API key storage, built-in audit.
 | **n8n automation / batch / production** | `roomi-fields/notebooklm-mcp` |
 | **Security-first** | `Pantheon-Security/notebooklm-mcp-secure` |
 
+## Notebook Migration Between Accounts
+
+Essential for disaster recovery: if your agent account gets flagged or you want to rotate, migrate notebooks to a fresh account.
+
+### Method 1: Share via NotebookLM UI (Simplest)
+
+NotebookLM has native sharing. Open the notebook → Share → add target account email. Target account gets Editor access. Works cross-account.
+
+**Limitation:** sources stay linked to original account's Drive. Target can view/chat but may lose access if original account is gone.
+
+### Method 2: Source Export + Re-import (Most Reliable)
+
+Extract source list from old account, upload sources to new account.
+
+Using `roomi-fields/notebooklm-mcp`:
+```bash
+# On old account — list sources per notebook
+curl http://localhost:3000/notebook/{id}/sources
+
+# Create notebook on new account
+curl -X POST http://localhost:3000/notebook/create \
+  -H 'Content-Type: application/json' \
+  -d '{"name": "Migrated Notebook"}'
+
+# Add each source to new account (URLs, PDFs, YouTube)
+curl -X POST http://localhost:3000/source/add \
+  -H 'Content-Type: application/json' \
+  -d '{"notebook_id": "new-id", "url": "https://..."}'
+```
+
+Using `teng-lin/notebooklm-py`:
+```bash
+# On old account
+notebooklm list
+notebooklm source list --notebook <id>
+notebooklm download report --notebook <id>  # Download generated content
+
+# On new account
+notebooklm create "Migrated Notebook"
+notebooklm source add <file.pdf> --notebook <id>
+```
+
+### Method 3: Web Research + Re-import (No API)
+
+1. On old account: open each notebook → manually note the sources (URLs, file names)
+2. Share notebook to new account via UI (gives temporary access)
+3. On new account: re-add sources from original URLs/files
+4. Delete shared access on old account when done
+
+### Method 4: Full Programmatic Migration (roomi-fields)
+
+Use auto-discovery to dump all notebook metadata, then recreate on target:
+
+```bash
+# Dump all notebooks with metadata
+curl http://localhost:3000/notebook/discover
+
+# Batch recreate on new account (switch GOOGLE_ACCOUNT env)
+# Requires separate MCP server instance per account
+```
+
+### Migration Checklist
+
+- [ ] Create fresh Google account for target
+- [ ] Set up NotebookLM MCP on target account
+- [ ] Verify target account has NotebookLM access
+- [ ] Export source list from old account
+- [ ] Re-add all sources to new account
+- [ ] Verify Q&A works on new account
+- [ ] Keep old account active until migration is confirmed
+- [ ] Delete old account's notebooks only after verification
+
+**Recommendation:** run two MCP server instances (one per account) side-by-side during migration. `roomi-fields` supports this natively with multi-account rotation config.
+
 ## Security Rules
 
 - **Separate Google account** — never use your primary account
