@@ -2,60 +2,120 @@
 
 Connect NotebookLM to AI agents (Codex, OpenCode, Hermes, n8n) as external knowledge base.
 
+All tools use **undocumented internal Google APIs** — no official consumer API exists. Use at your own risk with a **separate Google account**.
+
 ## Architecture
 
 ```
 Agent → MCP/stdio (local) → NotebookLM (separate Google account)
 ```
 
-Or for multi-client access:
+For multi-client access (n8n/Telegram/API):
 
 ```
-n8n/Telegram/API → HTTP → NotebookLM MCP → NotebookLM
+n8n/Telegram/API → HTTP (127.0.0.1 only) → NotebookLM MCP → NotebookLM
 ```
 
 HTTP mode only on `127.0.0.1`, Tailscale, SSH tunnel, or private LAN.
 
-## Options
+## Comparison of All Methods
 
-### 1. `jacob-bd/notebooklm-mcp-cli` (recommended)
+| Tool | Approach | Auth | Transport | Ban Risk | Reliability | Safety | Best For |
+|------|----------|------|-----------|----------|-------------|--------|----------|
+| **jacob-bd/notebooklm-mcp-cli** | Reverse-engineered RPC + cookie extraction | Cookie (`nlm login`) | stdio MCP | **Medium** — direct API calls detectable by rate patterns | **Medium** — undocumented API breaks often, dev fixes fast | **Medium** — cookies stored locally, session theft risk | Personal CLI, Codex/OpenCode integration |
+| **PleasePrompto/notebooklm-mcp** | Chrome automation (Patchright) | Browser session | stdio MCP + Streamable HTTP | **Low-Medium** — browser automation looks human, but detectable | **High** — simulates real user, survives UI changes better | **Medium** — Chrome profile needed, session in browser | Stable daily use, HTTP mode for remote |
+| **teng-lin/notebooklm-py** | Playwright browser automation | Browser cookie | CLI + Python API + MCP + REST | **Low-Medium** — realistic typing/mouse patterns | **Medium-High** — mature, active maintenance | **Medium** — passwords not stored (cookie auth) | Python pipelines, Claude Code Skills |
+| **gnh1201/notebooklm-rest-api** | FastAPI wrapper over notebooklm-py | Browser cookie | REST API | **Same as notebooklm-py** | **Medium** — wrapper, inherits upstream stability | **Medium** — adds HTTP attack surface | REST API needed, lightweight |
+| **roomi-fields/notebooklm-mcp** | Chrome automation (Patchright) + Node.js | Browser session + auto-reauth | MCP + REST (33 endpoints) + Docker | **Low-Medium** — humanization features, multi-account rotation | **High** — production-grade, batch-tested 1000+ questions, auto-reauth | **Medium-High** — most secure features (session rotation, TOTP), but HTTP surface | n8n workflows, batch processing, production |
+| **Pantheon-Security/notebooklm-mcp-secure** | Chrome automation + security focus | Browser session | MCP | **Low** — designed for security | **Medium** — smaller community, less battle-tested | **High** — security audit, no API key storage | Security-conscious users |
 
-CLI + MCP server. Python, installed via `uv`/`pip`. Supports Codex, OpenCode, Claude Code.
+## Ban Risk Assessment
+
+**No confirmed bans reported** from any of these tools as of July 2026. However:
+
+- **Low risk** — browser automation (PleasePrompto, teng-lin, roomi-fields): simulates real user interactions including typing speed variations and mouse movements. Harder to detect as bot.
+- **Medium risk** — direct RPC/API calls (jacob-bd): reverse-engineered internal API calls without browser. Rate patterns may trigger Google's automated access detection.
+- **Risk factors:** request frequency, number of accounts, session reuse patterns, source of IP traffic.
+- **Google TOS:** prohibits automated access. No bans reported, but risk exists.
+- **Mitigation:** separate Google account, reasonable request intervals, avoid 0.0.0.0 binding.
+
+## Detailed Options
+
+### 1. `jacob-bd/notebooklm-mcp-cli` — Lightest, most direct
+
+CLI + MCP server. Python via `uv`/`pip`. Directly calls NotebookLM's undocumented API.
 
 ```bash
 uv tool install notebooklm-mcp-cli
 nlm login
 ```
 
-For Codex (`~/.codex/config.toml`):
+Codex config (`~/.codex/config.toml`):
 ```toml
 [mcp_servers.notebooklm]
 command = "uvx"
 args = ["--from", "notebooklm-mcp-cli", "notebooklm-mcp"]
-enabled = true
-default_tools_approval_mode = "prompt"
 ```
 
-### 2. `PleasePrompto/notebooklm-mcp`
+**Pros:** Lightweight, simple, good for personal agent integration.
+**Cons:** Direct API calls — highest detection risk, breaks when Google changes API.
 
-Node.js + Chrome automation. Supports stdio and Streamable HTTP.
+### 2. `PleasePrompto/notebooklm-mcp` — Stable MCP + HTTP
+
+Node.js + Patchright (Chrome automation). Supports stdio and Streamable HTTP. Good balance.
 
 ```bash
-# Codex
 codex mcp add notebooklm npx notebooklm-mcp@latest
-
 # HTTP mode (localhost only)
 npx notebooklm-mcp@latest --transport http --port 3000
 ```
 
-### 3. `teng-lin/notebooklm-py`
+**Pros:** Browser automation = harder to detect, supports HTTP, active community.
+**Cons:** Requires Chrome/Chromium, heavier than CLI-only.
 
-Python API/CLI/MCP/REST. Built for persistent agent memory and RAG.
+### 3. `teng-lin/notebooklm-py` — Python native
 
-### 4. REST wrappers
+Python CLI/API/MCP/REST. Playwright-based browser automation with realistic patterns.
 
-- `gnh1201/notebooklm-rest-api` — FastAPI wrapper over notebooklm-py
-- `roomi-fields/notebooklm-mcp` — 33 HTTP endpoints, n8n/Zapier/curl compatible
+```bash
+pip install notebooklm-py
+pip install "notebooklm-py[browser]"
+playwright install chromium
+notebooklm login
+```
+
+**Pros:** Full NotebookLM feature access (flashcards, mind maps, reports, audio, sources), Python ecosystem.
+**Cons:** Requires Playwright + Chromium, heavier setup.
+
+### 4. `roomi-fields/notebooklm-mcp` — Most feature-rich
+
+Production-grade. 33 REST API endpoints + MCP + Docker. Auto-reauth, multi-account rotation, batch processing.
+
+```bash
+git clone https://github.com/roomi-fields/notebooklm-mcp.git
+cd notebooklm-mcp && npm install && npm run build && npm run setup-auth
+npm run start:http  # REST API on :3000
+```
+
+**Pros:** Most complete feature set (Q&A, audio/video/infographic generation, batch, RTFM vault), best for n8n/automation, auto-reauth, tested on 1000+ overnight queries.
+**Cons:** Most complex setup, Node.js + Chrome required.
+
+### 5. `Pantheon-Security/notebooklm-mcp-secure`
+
+Security-focused fork, no API key storage, built-in audit.
+
+**Pros:** Security features, audit trail.
+**Cons:** Smaller community, fewer features.
+
+## Recommendation
+
+| Use Case | Recommended |
+|----------|------------|
+| **Personal agent integration** (Codex/OpenCode) | `jacob-bd/notebooklm-mcp-cli` |
+| **Stable daily use + HTTP** | `PleasePrompto/notebooklm-mcp` |
+| **Python pipeline / Claude Code Skills** | `teng-lin/notebooklm-py` |
+| **n8n automation / batch / production** | `roomi-fields/notebooklm-mcp` |
+| **Security-first** | `Pantheon-Security/notebooklm-mcp-secure` |
 
 ## Security Rules
 
@@ -63,6 +123,7 @@ Python API/CLI/MCP/REST. Built for persistent agent memory and RAG.
 - **No public HTTP** — never bind to `0.0.0.0` without trusted network
 - **HTTP only via** `127.0.0.1`, Tailscale, SSH tunnel, or private LAN
 - **Do not share** sources as Editor from primary Drive
+- **Auto-reauth-aware tools** (roomi-fields) are safer for long-running sessions
 - All tools use undocumented internal API — expect breakage
 
 ## References
