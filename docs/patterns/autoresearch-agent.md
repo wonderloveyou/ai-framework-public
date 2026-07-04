@@ -46,6 +46,24 @@ description: Weekly cron-driven research agent for Obsidian knowledge pipeline. 
 - **Источники противоречат друг другу** — зафиксировать оба, пометить в contradictions.md.
 - **Новых данных нет** — записать что проверили, обновить дату в существующей заметке.
 
+## Связанные проекты
+
+### Karpathy Autoresearch
+https://github.com/karpathy/autoresearch — AI agents running autonomous ML research experiments.
+Ключевая идея: **`program.md` как лёгкий скилл для агента**. Агент читает `program.md`, модифицирует `train.py`, запускает на 5 минут, проверяет метрику, сохраняет/откатывает, повторяет.
+
+Концепт `program.md` применим и для Obsidian autoresearch:
+```markdown
+# program.md — авто-ресёрч агент
+- Возьми тему из active-topics.md
+- Исследуй через Perplexity + Firecrawl
+- Запиши в Jarvis/01_raw/<topic>-<date>.md
+- Синтезируй в Jarvis/03_wiki/<topic>.md
+- Проверь contradictions.md
+```
+
+Разница: у Karpathy агент модифицирует код и меряет метрику (val_bpb), у нас — пополняет базу знаний. Механика та же: **program.md → run → measure → keep/discard → repeat**.
+
 ## Что не делать
 
 Не выдумывать факты. Все цифры — со ссылкой. Оценки — явно помечать «оценка».
